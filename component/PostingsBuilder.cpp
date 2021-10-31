@@ -49,9 +49,9 @@ int PostingsBuilder::dump() {
     if (terms_buf_.empty()) {
         return -1;
     }
-    if (byte_counter < max_block_size_) {
-        return 0;
-    }
+//    if (byte_counter < max_block_size_) {
+//        return 0;
+//    }
 
     BitStream header_s;
     BitStream body_s;

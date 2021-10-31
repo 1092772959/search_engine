@@ -11,8 +11,9 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-#add_subdirectory(third_lib/trecpp)
-#include_directories(third_lib/trecpp/include)
+add_subdirectory(third_lib/gflags)
+include_directories(third_lib/gflags)
+
 include_directories(component)
 include_directories(component/utils)
 add_executable(index_builder
@@ -27,4 +28,4 @@ add_executable(index_builder
         component/BlockEncoder.cpp
         component/LexiconBuilder.cpp)
 
-#target_link_libraries(${PROJECT_NAME} trecpp)
+target_link_libraries(${PROJECT_NAME} gflags::gflags)

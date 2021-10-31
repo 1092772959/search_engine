@@ -13,6 +13,7 @@ namespace fs = std::filesystem;
 int LexiconEncoder::encode(const unordered_map<string, LexiconEntry> &lexicon_tbl,
                                             BitStream &header_s,
                                             BitStream &body_s) {
+
     LexiconHeader header = {0};
     for (auto const & [term, entry] : lexicon_tbl) {
         body_s.put_string(term);

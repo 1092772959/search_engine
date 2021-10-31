@@ -6,6 +6,7 @@
 #define INDEX_BUILDER_COREBUILDER_H
 #include <string>
 #include <utility>
+#include <gflags/gflags.h>
 #include "HTMLParser.h"
 #include "DocTableBuilder.h"
 #include "PostingsBuilder.h"
@@ -17,6 +18,12 @@
 #define MAX_CACHE_SIZE (1 << 24)
 #define OUT_BLOCK_SIZE (1 << 30)
 #define OUT_CHUNK_SIZE 128
+
+DECLARE_int32(encode_mode);
+DECLARE_int64(inter_buffer_size);
+DECLARE_int64(merge_cache_size);
+DECLARE_int64(output_buffer_size);
+DECLARE_int64(chunk_length);
 
 namespace engine::builder {
 

@@ -21,17 +21,25 @@ CoreBuilder::CoreBuilder(string filename, string inter_dir, string output_dir, i
     switch(block_mode) {
         case 0:
             p_encoder = make_shared<BlockBinaryEncoder>(MAX_CHUNK_SIZE);
+            //p_encoder = make_shared<BlockBinaryEncoder>(FLAGS_chunk_length);
             break;
         default:
             p_encoder = make_shared<BlockPlainEncoder>(MAX_CHUNK_SIZE);
+            //p_encoder = make_shared<BlockPlainEncoder>(FLAGS_chunk_length);
             break;
     }
     p_posting_builder_ = make_shared<PostingsBuilder>(
             inter_dir, filename, MAX_BLOCK_SIZE, p_encoder);
+//    p_posting_builder_ = make_shared<PostingsBuilder>(
+//            inter_dir, filename, FLAGS_inter_buffer_size, p_encoder);
+
 
     // for final output
     shared_ptr<BlockEncoder> p_out_encoder =
             make_shared<BlockBinaryEncoder>(MAX_CHUNK_SIZE);
+
+//    shared_ptr<BlockEncoder> p_out_encoder =
+//            make_shared<BlockBinaryEncoder>(FLAGS_chunk_length);
 
     fs::path inverted_list_output = output_dir / fs::path("inverted_list");
     fs::path lexicon_table = output_dir / fs::path("lexicon_table");
@@ -41,6 +49,11 @@ CoreBuilder::CoreBuilder(string filename, string inter_dir, string output_dir, i
     p_inverted_builder = make_shared<InvertedListBuilder>(
             inverted_list_output, lexicon_table, MAX_CACHE_SIZE, OUT_BLOCK_SIZE, OUT_CHUNK_SIZE,
             p_encoder, p_out_encoder);
+
+//    p_inverted_builder = make_shared<InvertedListBuilder>(
+//            inverted_list_output, lexicon_table,
+//            FLAGS_merge_cache_size, FLAGS_output_buffer_size, FLAGS_chunk_length,
+//            p_encoder, p_out_encoder);
 }
 
 void CoreBuilder::run() {
@@ -97,7 +110,8 @@ void CoreBuilder::run() {
     }
 
     auto posting_elapse = duration_cast<seconds>(steady_clock::now() - begin_ts).count();
-    cout << "Create intermediate postings elapse: " << posting_elapse << " sec" << endl;
+    cout << "Create intermediate postings elapse: " << posting_elapse << " sec"
+        << endl;
 
     begin_ts = steady_clock::now();
 

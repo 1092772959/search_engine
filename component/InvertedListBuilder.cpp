@@ -101,6 +101,7 @@ InvertedListBuilder::InvertedListBuilder(string output_file,
     , out_cursor_(0)
     , p_inter_block_encoder_(p_block_encoder)
     , p_out_encoder_(p_out_encoder)
+    , p_lexicon_encoder_(new LexiconEncoder())
 {
     out_fd = fopen(output_file_.c_str(), "w");
     assert (out_fd != nullptr);
@@ -197,6 +198,7 @@ int InvertedListBuilder::execute() {
         cerr << "Dump lexicon table error: " << ret << endl;
         return -1;
     }
+    cout << "finish lexicon" << endl;
     return ret;
 }
 
@@ -277,9 +279,11 @@ int InvertedListBuilder::dump_lexicon_entries(unordered_map<string, LexiconEntry
     // encode
     BitStream header_s;
     BitStream body_s;
+    cout << "start to dump lexicon" << endl;
     if (p_lexicon_encoder_->encode(lexicons, header_s, body_s) != 0) {
         return -1;
     }
+    cout << "Finish encode lexicon" << endl;
     if (p_lexicon_encoder_->dump(header_s, body_s, lexicon_file_) != 0) {
         return -1;
     }

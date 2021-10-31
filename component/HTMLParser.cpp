@@ -89,56 +89,6 @@ int HTMLParser::parse(istream & in, ParserResult & result,
             }
             break;
         }
-
-//        if (tmp == "<DOC>") {
-//            if (status != 0) {
-//                cerr << "Status is valid" << endl;
-//                return -1;
-//            }
-//            status = 1;
-//        } else if (tmp.rfind("<DOCNO>", 0) == 0) {
-//            if (status != 1) {
-//                cerr << "Status is valid" << endl;
-//                return -1;
-//            }
-//            status = 2;
-//        } else if (tmp.rfind("<TEXT>", 0) == 0) {
-//            if (status != 2) {
-//                cerr << "Status is valid" << endl;
-//                return -1;
-//            }
-//            status = 3;
-//        } else if (tmp.rfind("</TEXT>", 0) == 0) {
-//            if (status != 3) {
-//                return -1;
-//            }
-//            status = 4;
-//        } else if (tmp.rfind("</DOC>", 0) == 0) {
-//            if (status != 4) {
-//                return -1;
-//            }
-//            break;
-//        } else {
-//            if (!find_url) {
-//                result.url_ = tmp;
-//                find_url = true;
-//            } else {
-//                string term;
-//                for (char & c : tmp) {
-//                    if (delimiters.find(c) != delimiters.end()) {
-//                        if (!term.empty()) {
-//                            ++result.posting_tbl[term];
-//                            term.clear();
-//                        }
-//                    } else {
-//                        term.push_back(c);
-//                    }
-//                }
-//                if (!term.empty()) {
-//                    ++result.posting_tbl[term];
-//                }
-//            }
-//        }
     }
 
     return 0;
