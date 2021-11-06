@@ -26,6 +26,6 @@ add_executable(index_builder
         component/utils/encoding.cpp
         component/InvertedListBuilder.cpp
         component/BlockEncoder.cpp
-        component/LexiconBuilder.cpp)
+        component/LexiconBuilder.cpp component/query_process/QueryExecution.cpp component/query_process/QueryExecution.h)
 
 target_link_libraries(${PROJECT_NAME} gflags::gflags)

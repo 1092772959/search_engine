@@ -18,9 +18,9 @@ HTMLParser::HTMLParser() {
                   '(', ')', '-', '/', '+', '*', '&', '^', '"', '\''};
 }
 
-int HTMLParser::parse(istream & in, ParserResult & result,
-                      uint32_t doc_id,
-                      const shared_ptr<PostingsBuilder>& p_builder) {
+int HTMLParser::parse(istream & in,
+                      ParserResult & result,
+                      uint32_t doc_id) {
 
     //Result trecppResult = text::read_subsequent_record(in);
 
@@ -61,10 +61,9 @@ int HTMLParser::parse(istream & in, ParserResult & result,
                     for (char &c: tmp) {
                         if (delimiters.find(c) != delimiters.end()) {
                             if (!term.empty()) {
-                                //++result.posting_tbl[term];
                                 if (alpha_num) {
-                                    //result.terms.emplace_back(move(term));
-                                    p_builder->add_posting(doc_id, term);
+                                    result.terms.push_back(term);
+                                    ++result.doc_length_;
                                 }
                                 term.clear();
                                 alpha_num = false;
@@ -76,10 +75,9 @@ int HTMLParser::parse(istream & in, ParserResult & result,
                             term.push_back(c);
                         }
                     }
-                    if (!term.empty()) {
-                        //++result.posting_tbl[term];
-                        //result.terms.emplace_back(move(term));
-                        p_builder->add_posting(doc_id, term);
+                    if (!term.empty() && alpha_num) {
+                        result.terms.push_back(term);
+                        ++result.doc_length_;
                     }
                 }
             }
@@ -93,8 +91,3 @@ int HTMLParser::parse(istream & in, ParserResult & result,
 
     return 0;
 }
-
-ParserResult::ParserResult(string doc_id, string url, size_t content_size):
-    doc_id_(std::move(doc_id)),
-    url_(std::move(url)),
-    content_size_(content_size) { }

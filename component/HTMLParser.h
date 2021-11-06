@@ -13,21 +13,16 @@
 namespace engine::builder {
 
     struct ParserResult {
-        ParserResult() { }
-        ParserResult(std::string  doc_id,
-                     std::string  url,
-                     size_t content_size);
         std::string doc_id_;
         std::string url_;
-        size_t content_size_;
-        //std::vector<std::string> terms;
+        size_t doc_length_;
+        std::vector<std::string> terms;
     };
 
     class HTMLParser {
     public:
         HTMLParser();
-        int parse(std::istream & is, ParserResult & result, uint32_t doc_id,
-                  const std::shared_ptr<PostingsBuilder> & p_builder);
+        int parse(std::istream & is, ParserResult & result, uint32_t doc_id);
     private:
         std::unordered_set<char> delimiters;
     };

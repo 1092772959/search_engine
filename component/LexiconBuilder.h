@@ -27,6 +27,17 @@ namespace engine::builder {
         virtual int load(const std::string & src_file, LexiconHeader & header, BitStream & body_s);
     };
 
+//    class LexiconPlainEncoder {
+//        int encode(const std::unordered_map<std::string, LexiconEntry> & lexicon_tbl,
+//                   BitStream & header_s,
+//                   BitStream & body_s);
+//
+//        int decode(const LexiconHeader & header, BitStream & body_s,
+//                           std::unordered_map<std::string, LexiconEntry> & lexicon_tbl);
+//
+//        virtual int dump(BitStream & header_s, BitStream & body_s, const std::string & dest_file);
+//        virtual int load(const std::string & src_file, LexiconHeader & header, BitStream & body_s);
+//    };
 }
 
 

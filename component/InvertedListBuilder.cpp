@@ -103,6 +103,7 @@ InvertedListBuilder::InvertedListBuilder(string output_file,
     , p_out_encoder_(p_out_encoder)
     , p_lexicon_encoder_(new LexiconEncoder())
 {
+    cout << output_file_ << endl;
     out_fd = fopen(output_file_.c_str(), "w");
     assert (out_fd != nullptr);
 }
@@ -111,9 +112,18 @@ InvertedListBuilder::~InvertedListBuilder() {
     fclose(out_fd);
 }
 
-int InvertedListBuilder::execute() {
+int InvertedListBuilder::execute(const vector<Document> & doc_table,
+                                 unordered_map<string, LexiconEntry> & lexicons) {
     int ret = 0;
-    unordered_map<string, LexiconEntry> lexicons;
+    //unordered_map<string, LexiconEntry> lexicons;
+
+    // calculate average document length
+    float doc_size_sum = 0.0;
+    for (const auto & doc : doc_table) {
+        doc_size_sum += doc.doc_size_;
+    }
+    float average_doc_size = doc_size_sum / (1.0 * doc_table.size());
+
     // init block buffers
     vector<BufferNode> blocks;
     for (auto const & block_file : block_files_) {
@@ -145,20 +155,35 @@ int InvertedListBuilder::execute() {
         Posting posting;
         block.pop_posting(posting);
 
+        // precompute the score
+        for (int i = 0; i < (int)posting.doc_ids.size(); ++i) {
+            float k1 = 1.2;
+            float b = 0.75;
+            float fdt = (float)posting.frequencies[i];
+            uint32_t doc_id = posting.doc_ids[i];
+            float K = k1 * ((1 - b) + b * doc_table[doc_id].doc_size_ / average_doc_size);
+            float score = log(((float)doc_table.size() - (float)lexicons[posting.term].length_ + 0.5)
+                            / ((float)lexicons[posting.term].length_ + 0.5)) * (k1 + 1) * fdt / (K + fdt);
+            posting.score_bm25.push_back(score);
+        }
+
         // append to output
         if (output_buf.empty() || output_buf.back().term != posting.term) {
+
             // update out_buf_size_
 
             out_buf_size_ += posting.term.size()
                     + posting.doc_ids.size() * sizeof(uint32_t)
-                    + posting.frequencies.size() * sizeof(uint64_t);
+                    + posting.frequencies.size() * sizeof(uint64_t)
+                    + posting.score_bm25.size() * sizeof(float);
 
             output_buf.emplace_back(move(posting));
 
         } else {
             // update out_buf_size_
             out_buf_size_ += posting.doc_ids.size() * sizeof(uint32_t)
-                             + posting.frequencies.size() * sizeof(uint64_t);
+                             + posting.frequencies.size() * sizeof(uint64_t)
+                             + posting.score_bm25.size() * sizeof(float);
 
             // merge
             Posting & pred = output_buf.back();
@@ -236,13 +261,13 @@ int InvertedListBuilder::dump_output_block(vector<Posting> &buf,
             for (uint64_t i = cur; i < next; ++i) {
                 chunk.doc_ids.push_back(posting.doc_ids[i]);
                 chunk.frequencies.push_back(posting.frequencies[i]);
+                chunk.score_bm25.push_back(posting.score_bm25[i]);
             }
 
-            if (auto ptr = lexicon.find(posting.term); ptr != lexicon.end()) {
-                ptr->second.length_ += chunk.doc_ids.size();
-            } else {
-                LexiconEntry entry(out_cursor_, header.chunk_count, chunk.doc_ids.size());
-                lexicon[posting.term] = entry;
+            auto ptr = lexicon.find(posting.term);
+            if (ptr->second.block_cursor_ == 0) {
+                ptr->second.block_cursor_ = out_cursor_;
+                ptr->second.chunk_offset_ = header.chunk_count;
             }
 
             // encode chunk
@@ -284,8 +309,10 @@ int InvertedListBuilder::dump_lexicon_entries(unordered_map<string, LexiconEntry
         return -1;
     }
     cout << "Finish encode lexicon" << endl;
+    cout << lexicon_file_ << endl;
     if (p_lexicon_encoder_->dump(header_s, body_s, lexicon_file_) != 0) {
         return -1;
     }
+    cout << "Finish dump lexicon file" << endl;
     return 0;
 }

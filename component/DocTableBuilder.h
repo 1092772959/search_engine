@@ -23,10 +23,10 @@ namespace engine {
 
         class DocTableBuilder {
         public:
-            int addDoc(Document && document);
-            int dump(std::string file_name);
-        private:
-            std::vector<Document> docTable;
+            //int addDoc(Document && document);
+            int dump(std::string file_name, const std::vector<Document> & doc_table);
+//        private:
+            //std::vector<Document> docTable;
         };
 
     } // namespace builder

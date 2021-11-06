@@ -19,6 +19,7 @@ namespace engine::builder {
             std::string term;
             std::vector<uint32_t> doc_ids;
             std::vector<uint64_t> frequencies;
+            std::vector<float> score_bm25;
             Posting() { }
             Posting(std::string t, std::vector<uint32_t> && ids,
                     std::vector<uint64_t> && freqs)

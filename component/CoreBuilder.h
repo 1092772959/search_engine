@@ -37,12 +37,13 @@ namespace engine::builder {
             void run();
 
         private:
-            std::string filename;
+            std::string input_file_;
             HTMLParser parser;
             std::string doc_table_file_;
             DocTableBuilder doc_table_builder_;
             std::shared_ptr<PostingsBuilder> p_posting_builder_;
             std::shared_ptr<InvertedListBuilder> p_inverted_builder;
+            std::vector<Document> doc_table;
         };
 
     } // namespace engin

@@ -77,7 +77,6 @@ int BlockBinaryEncoder::encode_inter_posting(const string & term,
     return 0;
 }
 
-
 int BlockBinaryEncoder::decode_inter_block(BitStream &src, Block & inter_block) {
     decode_inter_header(src, inter_block.header_);
     for (size_t i = 0; i < inter_block.header_.chunk_count; ++i) {
@@ -110,12 +109,24 @@ int BlockBinaryEncoder::decode_inter_posting(BitStream &src, Posting &posting) {
 int BlockBinaryEncoder::encode_chunk(const Posting & posting, BitStream & out) {
     delta_encode(posting.doc_ids, out);
     bit_packing(posting.frequencies, out);
+    for (auto & score : posting.score_bm25) {
+        uint32_t buf = 0;
+        memcpy(&buf, &score, sizeof(float));
+        out.put_int32(buf);
+    }
     return 0;
 }
 
 int BlockBinaryEncoder::decode_chunk(BitStream &src, Posting &posting) {
     delta_decode(src, posting.doc_ids);
-    delta_decode(src, posting.frequencies);
+    bit_packing_decode(src, posting.frequencies);
+    for (size_t i = 0; i < posting.doc_ids.size(); ++i) {
+        uint32_t buf = 0;
+        float score = 0.0;
+        buf = src.get_int32();
+        memcpy(&score, &buf, sizeof(float));
+        posting.score_bm25.push_back(score);
+    }
     return 0;
 }
 

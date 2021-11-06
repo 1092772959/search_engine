@@ -44,9 +44,6 @@ int LexiconEncoder::decode(const LexiconHeader & header, BitStream &body_s,
 }
 
 int LexiconEncoder::dump(BitStream &header_s, BitStream &body_s, const string & dest_file) {
-    if (!fs::exists(dest_file)) {
-        return -1;
-    }
     FILE * fd = fopen(dest_file.c_str(), "w");
     if (fd == nullptr) {
         return -1;
