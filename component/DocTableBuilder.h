@@ -7,30 +7,25 @@
 
 #include <cstdint>
 #include <string>
-#include "HTMLParser.h"
 
-namespace engine {
-
-    namespace builder {
+namespace engine::builder {
 
         struct Document {
             uint64_t doc_id_;
             std::string url_;
             uint64_t doc_size_;
+            Document ();
             Document(const uint64_t & doc_id, const std::string & url,
                      const uint64_t & doc_size);
         };
 
         class DocTableBuilder {
         public:
-            //int addDoc(Document && document);
             int dump(std::string file_name, const std::vector<Document> & doc_table);
-//        private:
-            //std::vector<Document> docTable;
+            int load(std::string file_name, std::vector<Document> & doc_table);
         };
 
-    } // namespace builder
-} // namespace engin
+    } // namespace engin
 
 
 #endif //INDEX_BUILDER_DOCTABLEBUILDER_H

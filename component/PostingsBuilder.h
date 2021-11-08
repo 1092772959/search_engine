@@ -19,7 +19,6 @@ namespace engine::builder {
             std::string term;
             std::vector<uint32_t> doc_ids;
             std::vector<uint64_t> frequencies;
-            std::vector<float> score_bm25;
             Posting() { }
             Posting(std::string t, std::vector<uint32_t> && ids,
                     std::vector<uint64_t> && freqs)
@@ -33,6 +32,7 @@ namespace engine::builder {
             uint32_t header_size;
             uint32_t block_size; // block body size in bytes
             uint32_t chunk_count;
+            uint32_t last_chunk_length; // for the list across blocks
             std::vector<uint32_t> chunk_offsets;  // in bytes
             std::vector<uint32_t> last_doc_ids; // last doc id in each chunk
         };
@@ -83,9 +83,7 @@ namespace engine::builder {
             const uint64_t max_block_size_;
             std::string block_dir_;
             std::string file_base_;
-            //std::vector<Posting> posting_buf_;
             std::vector<std::pair<std::string, uint32_t> > terms_buf_;
-            //std::map<std::string, Posting> posting_table;
             std::vector<std::string> block_names;
             std::shared_ptr<BlockEncoder> p_block_encoder_;
         };

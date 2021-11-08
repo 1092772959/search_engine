@@ -22,8 +22,6 @@ int HTMLParser::parse(istream & in,
                       ParserResult & result,
                       uint32_t doc_id) {
 
-    //Result trecppResult = text::read_subsequent_record(in);
-
     int status = 0;
     int cur = 0;
     bool find_url = false;

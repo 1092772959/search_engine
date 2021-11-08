@@ -5,6 +5,7 @@
 #include "DocTableBuilder.h"
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 using namespace engine::builder;
 using namespace std;
@@ -15,13 +16,13 @@ Document::Document(const uint64_t &doc_id, const std::string &url, const uint64_
     doc_size_(doc_size)
 { }
 
-//int DocTableBuilder::addDoc(Document &&document) {
-//    docTable.emplace_back(document);
-//    return 0;
-//}
+Document::Document() {
+
+}
+
 
 int DocTableBuilder::dump(string file_name, const vector<Document> & doc_table) {
-    std::ofstream fout(file_name + "_doc_tbl", ios::binary);
+    ofstream fout(file_name, ios::binary);
     for (auto & doc: doc_table) {
         fout << doc.doc_id_ << " ";
         fout << doc.url_ << " ";
@@ -29,5 +30,17 @@ int DocTableBuilder::dump(string file_name, const vector<Document> & doc_table) 
         fout << endl;
     }
     fout.close();
+    return 0;
+}
+
+int DocTableBuilder::load(std::string file_name, std::vector<Document> & doc_table) {
+    ifstream fin(file_name, ios::binary);
+    while (!fin.eof()) {
+        Document doc;
+        fin >> doc.doc_id_;
+        fin >> doc.url_;
+        fin >> doc.doc_size_;
+        doc_table.push_back(doc);
+    }
     return 0;
 }

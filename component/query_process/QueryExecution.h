@@ -13,7 +13,12 @@ namespace engine::process {
 
     struct InvertedList {
         std::string term;
-
+        builder::LexiconEntry entry_;
+        FILE * fd_inv_list_;
+        builder::Posting chunk_cache_;
+        std::vector<uint64_t> chunk_byte_offsets;
+        std::vector<uint64_t> chunk_byte_lengths;
+        std::vector<uint32_t> last_doc_ids;
     };
 
 
@@ -26,9 +31,18 @@ namespace engine::process {
 
         ~QueryExecution();
     private:
+        int openList(const std::string & term, InvertedList & lp);
+        int closeList(InvertedList & lp);
+        int nextGEQ(InvertedList & lp, uint32_t k);
+        int loadAll(const std::string & term,
+                    InvertedList & lp);
+        int loadBlockHeader(uint64_t header_offset);
+    private:
         FILE * fd_inv_list_;
         const std::string inverted_list_file_;
         std::unordered_map<std::string, builder::LexiconEntry> lexicons_;
+        std::shared_ptr<builder::BlockEncoder> p_block_codec_;
+        std::unordered_map<uint64_t, builder::BlockHeader> block_header_dict_;
     };
 
 }

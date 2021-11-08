@@ -25,19 +25,13 @@ namespace engine::builder {
 
         virtual int dump(BitStream & header_s, BitStream & body_s, const std::string & dest_file);
         virtual int load(const std::string & src_file, LexiconHeader & header, BitStream & body_s);
+
+        virtual int dump_inter(const std::unordered_map<std::string, LexiconEntry> & lexicon_tbl,
+                               const std::string & dest_file);
+        virtual int load_inter(const std::string & src_file,
+                               std::unordered_map<std::string, LexiconEntry> & lexicon_tbl);
     };
 
-//    class LexiconPlainEncoder {
-//        int encode(const std::unordered_map<std::string, LexiconEntry> & lexicon_tbl,
-//                   BitStream & header_s,
-//                   BitStream & body_s);
-//
-//        int decode(const LexiconHeader & header, BitStream & body_s,
-//                           std::unordered_map<std::string, LexiconEntry> & lexicon_tbl);
-//
-//        virtual int dump(BitStream & header_s, BitStream & body_s, const std::string & dest_file);
-//        virtual int load(const std::string & src_file, LexiconHeader & header, BitStream & body_s);
-//    };
 }
 
 

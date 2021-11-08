@@ -69,7 +69,7 @@ namespace engine::builder {
                             std::shared_ptr<BlockEncoder> p_block_encoder,
                             std::shared_ptr<BlockEncoder> p_out_encoder);
         ~InvertedListBuilder();
-        int set_block_files(std::vector<std::string> & block_files);
+        int set_block_files(const std::vector<std::string> & block_files);
         int execute(const std::vector<Document> & doc_table,
                     std::unordered_map<std::string, LexiconEntry> & lexicons);
 

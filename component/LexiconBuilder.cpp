@@ -5,6 +5,7 @@
 #include "LexiconBuilder.h"
 #include "utils/encoding.h"
 #include <filesystem>
+#include <fstream>
 
 using namespace engine::builder;
 using namespace std;
@@ -72,4 +73,26 @@ int LexiconEncoder::load(const string & src_file, LexiconHeader & header, BitStr
 
     fclose(fd);
     return 0;
+}
+
+int LexiconEncoder::dump_inter(const unordered_map<string, LexiconEntry> & lexicon_tbl,
+                               const string & dest_file) {
+    ofstream fout(dest_file, ios::binary);
+    for (const auto & [term, entry] : lexicon_tbl) {
+        fout << term << " " << entry.length_ << endl;
+    }
+    return 0;
+}
+
+
+int LexiconEncoder::load_inter(const string & src_file,
+                               unordered_map<string, LexiconEntry> & lexicon_tbl) {
+    ifstream fin(src_file, ifstream::binary);
+    while (!fin.eof()) {
+        LexiconEntry entry;
+        string term;
+        fin >> term;
+        fin >> entry.length_;
+        lexicon_tbl[term] = entry;
+    }
 }

@@ -18,7 +18,7 @@ namespace engine::builder {
      */
     class BlockEncoder {
     public:
-        BlockEncoder(uint32_t chunk_size): chunk_size_(chunk_size) { }
+        BlockEncoder() { }
 
         virtual int encode_inter_block(const std::vector<Posting> & posting_table,
                                        BitStream & header_s,
@@ -38,8 +38,6 @@ namespace engine::builder {
         virtual int decode_inter_header(BitStream & src, BlockHeader & header) = 0;
         virtual int decode_inter_posting(BitStream & src, Posting & posting) = 0;
         virtual int decode_chunk(BitStream & src, Posting & posting) = 0;
-    protected:
-        const uint32_t chunk_size_;
     };
 
     /*
@@ -48,7 +46,7 @@ namespace engine::builder {
     class BlockBinaryEncoder : public BlockEncoder {
     public:
 
-        BlockBinaryEncoder(uint32_t chunk_size): BlockEncoder(chunk_size) { }
+        BlockBinaryEncoder(){ }
 
         int encode_inter_block(const std::vector<Posting> & posting_table,
                                BitStream & header_s,
@@ -75,9 +73,7 @@ namespace engine::builder {
      */
     class BlockPlainEncoder : public BlockEncoder {
     public:
-        BlockPlainEncoder(uint32_t chunk_size)
-                : BlockEncoder(chunk_size)
-        { }
+        BlockPlainEncoder() {}
         int encode_inter_block(const std::vector<Posting> & posting_table,
                                BitStream & header_s,
                                BitStream & out_s,
