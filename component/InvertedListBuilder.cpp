@@ -112,17 +112,9 @@ InvertedListBuilder::~InvertedListBuilder() {
     fclose(out_fd);
 }
 
-int InvertedListBuilder::execute(const vector<Document> & doc_table,
-                                 unordered_map<string, LexiconEntry> & lexicons) {
+int InvertedListBuilder::execute() {
     int ret = 0;
-    //unordered_map<string, LexiconEntry> lexicons;
-
-    // calculate average document length
-    float doc_size_sum = 0.0;
-    for (const auto & doc : doc_table) {
-        doc_size_sum += doc.doc_size_;
-    }
-    float average_doc_size = doc_size_sum / (1.0 * doc_table.size());
+    unordered_map<string, LexiconEntry> lexicons;
 
     // init block buffers
     vector<BufferNode> blocks;
@@ -154,17 +146,6 @@ int InvertedListBuilder::execute(const vector<Document> & doc_table,
         }
         Posting posting;
         block.pop_posting(posting);
-
-//        for (int i = 0; i < (int)posting.doc_ids.size(); ++i) {
-//            float k1 = 1.2;
-//            float b = 0.75;
-//            float fdt = (float)posting.frequencies[i];
-//            uint32_t doc_id = posting.doc_ids[i];
-//            float K = k1 * ((1 - b) + b * doc_table[doc_id].doc_size_ / average_doc_size);
-//            float score = log(((float)doc_table.size() - (float)lexicons[posting.term].length_ + 0.5)
-//                            / ((float)lexicons[posting.term].length_ + 0.5)) * (k1 + 1) * fdt / (K + fdt);
-//            posting.score_bm25.push_back(score);
-//        }
 
         // append to output
         if (output_buf.empty() || output_buf.back().term != posting.term) {
@@ -272,10 +253,12 @@ int InvertedListBuilder::dump_output_block(vector<Posting> &buf,
                 chunk.frequencies.push_back(posting.frequencies[i]);
             }
 
-            auto ptr = lexicon.find(posting.term);
-            if (ptr->second.block_cursor_ == 0) {
-                ptr->second.block_cursor_ = out_cursor_;
-                ptr->second.chunk_offset_ = header.chunk_count;
+            // update metadata in lexicon table
+            if (auto ptr = lexicon.find(posting.term); ptr != lexicon.end()) {
+                ptr->second.length_ += chunk.doc_ids.size();
+            } else {
+                LexiconEntry entry(out_cursor_, header.chunk_count, chunk.doc_ids.size());
+                lexicon[posting.term] = entry;
             }
 
             // encode chunk

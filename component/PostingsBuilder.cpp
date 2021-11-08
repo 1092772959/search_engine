@@ -32,16 +32,14 @@ int PostingsBuilder::add_postings(uint32_t doc_id,
     for (auto const & term : terms) {
         byte_counter += term.size() + sizeof(uint32_t);
         terms_buf_.emplace_back(make_pair(term, doc_id));
-        if (byte_counter >= max_block_size_) {
-            // dump to the disk
-            int ret = dump();
-            if (ret != 0) {
-                cerr << "Dump intermediate posting file error." << endl;
-                return ret;
-            }
+    }
+    if (byte_counter >= max_block_size_) {
+        // dump to the disk
+        if (int ret = dump(); ret != 0) {
+            cerr << "Dump intermediate posting file error." << endl;
+            return ret;
         }
     }
-
     return 0;
 }
 
@@ -49,9 +47,7 @@ int PostingsBuilder::dump() {
     if (terms_buf_.empty()) {
         return -1;
     }
-//    if (byte_counter < max_block_size_) {
-//        return 0;
-//    }
+    cout << "Start dump" << endl;
 
     BitStream header_s;
     BitStream body_s;

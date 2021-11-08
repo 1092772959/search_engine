@@ -22,6 +22,7 @@ DEFINE_string(inter_dir, "./data/tmp",
               "Directory for intermediate files");
 DEFINE_string(output_dir, "./data/output",
               "Directory for final output");
+DEFINE_int32(intermediate_block_count, 31, "Number of intermediate blocks");
 
 using namespace engine::builder;
 using namespace std;
@@ -32,26 +33,22 @@ int main(int argc, char * argv[]) {
 
     CoreBuilder core_builder;
 
-//    core_builder.run(FLAGS_input_file,
-//                     FLAGS_inter_dir,
-//                     FLAGS_output_dir,
-//                     FLAGS_encode_mode);
-//
+    core_builder.run(FLAGS_input_file,
+                     FLAGS_inter_dir,
+                     FLAGS_output_dir,
+                     FLAGS_encode_mode);
+
     vector<string> block_names;
 
     string file_base = std::filesystem::path(FLAGS_input_file).filename();
-    for (int i = 0; i < 31; ++i) {
+    for (int i = 0; i < FLAGS_intermediate_block_count; ++i) {
         fs::path dir(FLAGS_inter_dir);
         fs::path file(file_base + to_string(i));
         fs::path block_file = dir / file;
         block_names.push_back(block_file);
     }
 
-    fs::path doc_table_file = FLAGS_output_dir / fs::path(file_base + "_doc_table");
-    fs::path lexicon_inter_file = FLAGS_output_dir / fs::path(file_base + "_inter_lexicon_table");
-
     core_builder.merge_sort(FLAGS_input_file,
-                            doc_table_file,
                             FLAGS_output_dir,
                             block_names,
                             FLAGS_encode_mode);

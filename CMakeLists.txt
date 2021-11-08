@@ -16,8 +16,8 @@ include_directories(third_lib/gflags)
 
 include_directories(component)
 include_directories(component/utils)
-add_executable(index_builder
-        main.cpp
+include_directories(component/query_process)
+file(GLOB SOURCES
         component/HTMLParser.cpp
         component/CoreBuilder.cpp
         component/PostingsBuilder.cpp
@@ -26,6 +26,30 @@ add_executable(index_builder
         component/utils/encoding.cpp
         component/InvertedListBuilder.cpp
         component/BlockEncoder.cpp
-        component/LexiconBuilder.cpp component/query_process/QueryExecution.cpp component/query_process/QueryExecution.h)
+        component/LexiconBuilder.cpp
+        component/query_process/QueryExecution.cpp
+)
+file(GLOB HEADERS)
+add_library(inverted_index ${SOURCES})
+target_link_libraries(inverted_index gflags::gflags)
 
-target_link_libraries(${PROJECT_NAME} gflags::gflags)
+add_executable(index_builder main.cpp)
+target_link_libraries(index_builder inverted_index)
+#add_executable(index_builder
+#        main.cpp
+#        component/HTMLParser.cpp
+#        component/CoreBuilder.cpp
+#        component/PostingsBuilder.cpp
+#        component/DocTableBuilder.cpp
+#        component/utils/BitStream.cpp
+#        component/utils/encoding.cpp
+#        component/InvertedListBuilder.cpp
+#        component/BlockEncoder.cpp
+#        component/LexiconBuilder.cpp component/query_process/QueryExecution.cpp)
+#
+#target_link_libraries(${PROJECT_NAME} gflags::gflags)
+
+add_executable(query_process
+        query_process.cpp
+        )
+target_link_libraries(query_process inverted_index )

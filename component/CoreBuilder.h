@@ -28,7 +28,6 @@ namespace engine::builder {
                  int block_mode);
 
         void merge_sort(const std::string & src_file,
-                        const std::string & doc_table_file,
                         const std::string & output_dir,
                         const std::vector<std::string> & block_names,
                         int block_mode);
