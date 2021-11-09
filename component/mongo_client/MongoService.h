@@ -28,8 +28,8 @@ using bsoncxx::builder::stream::finalize;
 using bsoncxx::builder::stream::open_array;
 using bsoncxx::builder::stream::open_document;
 
-DEFINE_string(mongo_db, "test", "name of the database");
-DEFINE_string(mongo_collection, "search_engine", "name of the collection");
+DECLARE_string(mongo_db);
+DECLARE_string(mongo_collection);
 
 namespace engine::database {
 
@@ -45,16 +45,17 @@ namespace engine::database {
         void operator=(const MongoService &) = delete;
         MongoService(const MongoService &) = delete;
         int addDocument(const builder::Document & doc);
+        int addDocuments(const std::vector<builder::Document> &);
         int selectDocument(const uint32_t & doc_id, builder::Document & output);
     private:
         MongoService() {
             std::cout << "Init mongodb service" << std::endl;
-            mongocxx::instance instance{}; // This should be done only once.
-            mongocxx::client client {mongocxx::uri{}};
             db_ = client[FLAGS_mongo_db];
             coll_ = db_[FLAGS_mongo_collection];
         }
     private:
+        mongocxx::instance instance{}; // This should be done only once.
+        mongocxx::client client {mongocxx::uri{"mongodb://localhost:27017"}};
         mongocxx::database db_;
         mongocxx::collection coll_;
     };

@@ -21,6 +21,8 @@ DEFINE_string(doc_table_file, "./data/output/msmarco-docs.trec_doc_table",
 DEFINE_int64(chunk_length, 128,
              "Max length for a chunk, which is the minimum unit to compress");
 DEFINE_uint32(MAX_DOC_ID, UINT32_MAX, "To denote an unreachable doc id");
+DEFINE_string(mongo_db, "test", "name of the database");
+DEFINE_string(mongo_collection, "msmarco", "name of the collection");
 
 int main() {
     auto begin_ts = steady_clock::now();

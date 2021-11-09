@@ -4,7 +4,6 @@
 
 #include "HTMLParser.h"
 
-#include <algorithm>
 #include <sstream>
 #include <utility>
 #include <chrono>
@@ -21,7 +20,6 @@ HTMLParser::HTMLParser() {
 int HTMLParser::parse(istream & in,
                       ParserResult & result,
                       uint32_t doc_id) {
-
     int status = 0;
     int cur = 0;
     bool find_url = false;
@@ -54,6 +52,8 @@ int HTMLParser::parse(istream & in,
                     result.url_ = tmp;
                     find_url = true;
                 } else {
+                    result.content.insert(result.content.end(),
+                                          tmp.begin(), tmp.end());
                     string term;
                     bool alpha_num = false;
                     for (char &c: tmp) {

@@ -21,7 +21,7 @@ namespace engine::builder {
             static const std::string CONTENT_KEY;
             Document ();
             Document(const uint64_t & doc_id, const std::string & url,
-                     const uint64_t & doc_size);
+                     const uint64_t & doc_size, const std::string & content);
         };
 
         class DocTableBuilder {

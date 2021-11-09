@@ -10,16 +10,19 @@
 using namespace engine::builder;
 using namespace std;
 
-
 const string Document::DOC_ID_KEY = "doc_id";
 const string Document::URL_KEY = "url";
 const string Document::DOC_LENGTH_KEY = "doc_length";
 const string Document::CONTENT_KEY = "content";
 
-Document::Document(const uint64_t &doc_id, const std::string &url, const uint64_t &doc_size):
+Document::Document(const uint64_t &doc_id,
+                   const string &url,
+                   const uint64_t &doc_size,
+                   const string & content):
     doc_id_(doc_id),
     url_(url),
-    doc_size_(doc_size)
+    doc_size_(doc_size),
+    content_(content)
 { }
 
 Document::Document() {

@@ -26,7 +26,7 @@ int MongoService::addDocument(const Document &doc) {
 int MongoService::selectDocument(const uint32_t &doc_id, Document & output) {
     bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result =
             coll_.find_one({
-                document{} << output.DOC_ID_KEY << to_string(doc_id) << finalize
+                document{} << output.DOC_ID_KEY << (int64_t)doc_id << finalize
             });
     if(maybe_result) {
         bsoncxx::document::view view = maybe_result->view();
@@ -43,6 +43,25 @@ int MongoService::selectDocument(const uint32_t &doc_id, Document & output) {
         cerr << "Cannot find document with id: " << doc_id << endl;
         return -1;
     }
+    return 0;
+}
+
+int MongoService::addDocuments(const vector<Document> & docs) {
+    vector<bsoncxx::document::value> documents;
+    for (const auto & doc : docs) {
+        auto builder = bsoncxx::builder::stream::document{};
+        bsoncxx::document::value doc_value = builder
+                << Document::DOC_ID_KEY << (int64_t)doc.doc_id_
+                << Document::URL_KEY << doc.url_
+                << Document::DOC_LENGTH_KEY << (int64_t)doc.doc_size_
+                << Document::CONTENT_KEY << doc.content_
+                << bsoncxx::builder::stream::finalize;
+
+        documents.push_back(doc_value);
+    }
+    cout << "Start to insert" << endl;
+    coll_.insert_many(documents);
+    cout << "End of insert" << endl;
     return 0;
 }
 

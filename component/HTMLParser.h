@@ -17,6 +17,7 @@ namespace engine::builder {
         std::string url_;
         size_t doc_length_;
         std::vector<std::string> terms;
+        std::string content;
         ParserResult (): doc_length_(0) {}
     };
 

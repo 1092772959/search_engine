@@ -58,6 +58,8 @@ namespace engine::process {
         int loadAll(const std::string & term, InvertedList & lp);
         int loadBlockHeader(uint64_t header_offset);
         float compute_score(const std::string & term, uint32_t doc_id, uint64_t freq);
+        void print_result(const std::vector<QueryResult *> & results);
+        void get_snippets(const std::string & doc_content, const std::vector<std::string> & terms);
     private:
         FILE * fd_inv_list_;
         const std::string inverted_list_file_;

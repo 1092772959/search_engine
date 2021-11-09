@@ -23,6 +23,8 @@ DEFINE_string(inter_dir, "./data/tmp",
 DEFINE_string(output_dir, "./data/output",
               "Directory for final output");
 DEFINE_int32(intermediate_block_count, 31, "Number of intermediate blocks");
+DEFINE_string(mongo_db, "test", "name of the database");
+DEFINE_string(mongo_collection, "msmarco", "name of the collection");
 
 using namespace engine::builder;
 using namespace std;
@@ -37,20 +39,20 @@ int main(int argc, char * argv[]) {
                      FLAGS_inter_dir,
                      FLAGS_output_dir,
                      FLAGS_encode_mode);
-
-    vector<string> block_names;
-
-    string file_base = std::filesystem::path(FLAGS_input_file).filename();
-    for (int i = 0; i < FLAGS_intermediate_block_count; ++i) {
-        fs::path dir(FLAGS_inter_dir);
-        fs::path file(file_base + to_string(i));
-        fs::path block_file = dir / file;
-        block_names.push_back(block_file);
-    }
-
-    core_builder.merge_sort(FLAGS_input_file,
-                            FLAGS_output_dir,
-                            block_names,
-                            FLAGS_encode_mode);
+//
+//    vector<string> block_names;
+//
+//    string file_base = std::filesystem::path(FLAGS_input_file).filename();
+//    for (int i = 0; i < FLAGS_intermediate_block_count; ++i) {
+//        fs::path dir(FLAGS_inter_dir);
+//        fs::path file(file_base + to_string(i));
+//        fs::path block_file = dir / file;
+//        block_names.push_back(block_file);
+//    }
+//
+//    core_builder.merge_sort(FLAGS_input_file,
+//                            FLAGS_output_dir,
+//                            block_names,
+//                            FLAGS_encode_mode);
     return 0;
 }
