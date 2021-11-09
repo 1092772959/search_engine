@@ -8,12 +8,13 @@
 #include <vector>
 #include <filesystem>
 #include <chrono>
+#include "MongoService.h"
 
 using namespace engine::builder;
 using namespace std;
 namespace fs = std::filesystem;
 using namespace std::chrono;
-
+using namespace engine::database;
 
 void CoreBuilder::run(const std::string & filename,
                       const std::string & inter_dir,

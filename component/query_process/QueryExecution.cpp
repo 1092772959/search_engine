@@ -424,7 +424,7 @@ int QueryExecution::disjunctive_query(const string &query) {
 
         auto ptr = *rit;
         cout << "Doc id: " << ptr->doc_id << ", score sum: " << ptr->score_sum << endl;
-        for (int i = 0; i < (int)ptr->scores.size(); ++i){
+        for (int i = 0; i < (int)ptr->scores.size(); ++i) {
             cout << ptr->terms[i] << " | score: " << ptr->scores[i]
                  << ", frequency: " << ptr->freqs[i] << endl;
         }

@@ -14,6 +14,11 @@ namespace engine::builder {
             uint64_t doc_id_;
             std::string url_;
             uint64_t doc_size_;
+            std::string content_;
+            static const std::string DOC_ID_KEY;
+            static const std::string URL_KEY;
+            static const std::string DOC_LENGTH_KEY;
+            static const std::string CONTENT_KEY;
             Document ();
             Document(const uint64_t & doc_id, const std::string & url,
                      const uint64_t & doc_size);
