@@ -24,14 +24,22 @@ DEFINE_uint32(MAX_DOC_ID, UINT32_MAX, "To denote an unreachable doc id");
 DEFINE_string(mongo_db, "test", "name of the database");
 DEFINE_string(mongo_collection, "msmarco", "name of the collection");
 
-int main() {
+int main(int argc, char * argv[]) {
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
     auto begin_ts = steady_clock::now();
     QueryExecution qp(FLAGS_inverted_list_file,
                    FLAGS_lexicon_file,
                    FLAGS_doc_table_file);
     auto init_elapse = duration_cast<seconds>(steady_clock::now() - begin_ts).count();
     cout << "Init elapse: " << init_elapse << " s" << endl;
-    qp.conjunctive_query("apple NYC");
-    qp.disjunctive_query("apple NYC");
+    while (true) {
+        string query;
+        cout << "Enter query(Ctrl+C to exit)>";
+        getline(cin, query);
+        if (query == "exit") {
+            break;
+        }
+        qp.conjunctive_query(query);
+    }
     return 0;
 }

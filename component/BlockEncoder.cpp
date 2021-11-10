@@ -23,7 +23,7 @@ int BlockBinaryEncoder::encode_inter_block(const vector<Posting> &posting_table,
                                            BitStream & header_s,
                                            BitStream & body_s,
                                            uint32_t & header_size) {
-    BlockHeader header = {0};
+    BlockHeader header;
 
     for (auto const & posting : posting_table) {
         if(posting.doc_ids.empty()) {
@@ -126,7 +126,7 @@ int BlockPlainEncoder::encode_inter_block(const vector<Posting> &posting_table,
                                           BitStream & header_s,
                                           BitStream & body_s,
                                           uint32_t & header_size) {
-    BlockHeader header = {0};
+    BlockHeader header;
 
     for (auto const & posting : posting_table) {
         if (posting.doc_ids.size() == 0) {

@@ -96,3 +96,28 @@ int LexiconEncoder::load_inter(const string & src_file,
         lexicon_tbl[term] = entry;
     }
 }
+
+int LexiconEncoder::load(const string &src_file, unordered_map<string, LexiconEntry> & lexicon_tbl) {
+    ifstream fin(src_file);
+    while (!fin.eof()) {
+        LexiconEntry entry;
+        string term;
+        fin >> term
+            >> entry.block_cursor_
+            >> entry.chunk_offset_
+            >> entry.length_;
+        lexicon_tbl[term] = entry;
+    }
+    return 0;
+}
+
+int LexiconEncoder::dump(const string &dest_file, const unordered_map<string, LexiconEntry> & lexicon_tbl) {
+    ofstream fout(dest_file);
+    for (const auto & [term, entry] : lexicon_tbl) {
+        fout << term << " ";
+        fout << entry.block_cursor_ << " ";
+        fout << entry.chunk_offset_ << " ";
+        fout << entry.length_ << endl;
+    }
+    return 0;
+}

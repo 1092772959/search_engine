@@ -19,7 +19,8 @@ using namespace engine::database;
 void CoreBuilder::run(const std::string & filename,
                       const std::string & inter_dir,
                       const std::string & output_dir,
-                      int block_mode) {
+                      int block_mode,
+                      int & intermediate_block_count) {
 
     fs::path fs_input_file(filename);
     string file_base = fs_input_file.filename();
@@ -63,26 +64,13 @@ void CoreBuilder::run(const std::string & filename,
         // update doc table
         doc_table.emplace_back(doc_id_cur, result.url_, result.doc_length_, result.content);
 
-        if (doc_id_cur % 1000 == 0) {
-            auto begin_load_ts = steady_clock::now();
-            MongoService::get_instance().addDocuments(doc_table);
-            doc_table.clear();
-            auto load_db_elapse = duration_cast<seconds>(begin_load_ts - begin_ts).count();
-            cout << "Load to mongodb elapse: " << load_db_elapse << " s" << endl;
-
-            auto cur_ts = steady_clock::now();
-            cout << "Counter: " << doc_id_cur
-                << " elapsed: " << duration_cast<seconds>(cur_ts - begin_ts).count() << " s"
-                << endl;
-        }
-
         auto parser_elapse = duration_cast<microseconds>(
                 steady_clock::now() - pre_ts).count();
 
         pre_ts = steady_clock::now();
 
         // update posting buffer
-        //posting_builder.add_postings(doc_id_cur, result.terms);
+        posting_builder.add_postings(doc_id_cur, result.terms);
 
         auto cur_ts = steady_clock::now();
 //        cout << "Counter: " << doc_id_cur << ", parser elapsed: " << parser_elapse << " ms"
@@ -91,28 +79,44 @@ void CoreBuilder::run(const std::string & filename,
 
         // generate a new doc id
         ++doc_id_cur;
+
+        if (doc_id_cur % 10000 == 0) {
+            auto begin_load_ts = steady_clock::now();
+            MongoService::get_instance().addDocuments(doc_table);
+            doc_table.clear();
+            auto load_db_elapse = duration_cast<milliseconds>(steady_clock::now() - begin_load_ts).count();
+            cout << "Load to mongodb elapse: " << load_db_elapse << " ms" << endl;
+
+            auto cur_ts = steady_clock::now();
+            cout << "Counter: " << doc_id_cur
+                 << " elapsed: " << duration_cast<seconds>(cur_ts - begin_ts).count() << " s"
+                 << endl;
+        }
     }
     is.close();
 
     // flush the remaining index postings to the disk
 
-//    ret = posting_builder.dump();
-//    if (ret != 0) {
-//        cerr << "Dump postings failed" << endl;
-//        abort();
-//    }
+    ret = posting_builder.dump();
+    if (ret != 0) {
+        cerr << "Dump postings failed" << endl;
+        abort();
+    }
+
+    // set intermediate block counter
+    intermediate_block_count = posting_builder.get_block_counter();
 
     auto posting_elapse = duration_cast<seconds>(steady_clock::now() - begin_ts).count();
     cout << "Create intermediate postings elapse: " << posting_elapse << " sec"
         << endl;
 
-    begin_ts = steady_clock::now();
-
     // dump doc table
     //doc_table_builder.dump(doc_table_file, doc_table);
 
     // dump doc table to database
-    MongoService::get_instance().addDocuments(doc_table);
+    if (!doc_table.empty()) {
+        MongoService::get_instance().addDocuments(doc_table);
+    }
 }
 
 void CoreBuilder::merge_sort(const string & src_file,

@@ -17,6 +17,8 @@ namespace engine::builder {
 
     class LexiconEncoder {
     public:
+        virtual int dump(const std::string & dest_file, const std::unordered_map<std::string, LexiconEntry> & lexicon_tbl);
+        virtual int load(const std::string & src_file, std::unordered_map<std::string, LexiconEntry> & lexicon_tbl);
         virtual int encode(const std::unordered_map<std::string, LexiconEntry> & lexicon_tbl,
                            BitStream & header_s,
                            BitStream & body_s);

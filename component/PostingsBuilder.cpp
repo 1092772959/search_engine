@@ -135,7 +135,7 @@ BlockLoader::BlockLoader(string block_filename, shared_ptr<BlockEncoder> p_block
         abort();
     }
     // decode header
-    fread(&header_.header_size, 1, sizeof(uint32_t), fd);
+    fread(&header_.header_size, sizeof(uint32_t), 1, fd);
 
     char * byte_buf = new char[header_.header_size];
     fread(byte_buf, sizeof(char), header_.header_size, fd);
@@ -164,7 +164,7 @@ int BlockLoader::load_posting(Posting &posting) {
     if (cur_posting == header_.chunk_count) {
         return -1;
     }
-    uint32_t length;
+    uint32_t length = 0;
     buf_.reset();
     buf_.stream.clear();
     if (cur_posting == 0) {
@@ -174,7 +174,7 @@ int BlockLoader::load_posting(Posting &posting) {
                 - header_.chunk_offsets[cur_posting - 1];
     }
     cur_posting++;
-    //cout << "Posting size: " << length << endl;
+    //cout << "Chunk size in byte: " << length << endl;
     char * byte_buf = new char[length];
     fread(byte_buf, sizeof(char), length, fd);
     buf_.append_byte_array(byte_buf, length);

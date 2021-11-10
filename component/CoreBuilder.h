@@ -25,7 +25,8 @@ namespace engine::builder {
         void run(const std::string & filename,
                  const std::string & inter_dir,
                  const std::string & output_dir,
-                 int block_mode);
+                 int block_mode,
+                 int & intermediate_block_count);
 
         void merge_sort(const std::string & src_file,
                         const std::string & output_dir,

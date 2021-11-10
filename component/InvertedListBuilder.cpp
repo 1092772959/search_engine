@@ -47,6 +47,7 @@ int BufferNode::load_from_disk() {
     if (block_empty()) {
         return -1;
     }
+    cout << "Start loading" << endl;
     int ret = 0;
     while (!loader_.empty() && buf_size_ < buf_size_limit_) {
         Posting posting;
@@ -120,6 +121,10 @@ int InvertedListBuilder::execute() {
     vector<BufferNode> blocks;
     for (auto const & block_file : block_files_) {
         blocks.emplace_back(block_file, p_inter_block_encoder_, in_buf_limit_);
+//        if (blocks.back().load_from_disk() != 0) {
+//            cerr << "Load from disk error" << endl;
+//            abort();
+//        }
     }
 
     // compare function for the priority queue
@@ -232,7 +237,7 @@ int InvertedListBuilder::dump_output_block(vector<Posting> &buf,
     }
 
     // encode
-    BlockHeader header = {0};
+    BlockHeader header;
 
     uint32_t header_size;
     BitStream header_stream;
@@ -283,7 +288,7 @@ int InvertedListBuilder::dump_output_block(vector<Posting> &buf,
     fwrite(header_stream.get_stream(), sizeof(uint8_t), header_stream.get_length(), out_fd);
     fwrite(body_stream.get_stream(), sizeof(uint8_t), body_stream.get_length(), out_fd);
 
-    out_cursor_ += sizeof(header_size) + header_stream.get_length() + body_stream.get_length();
+    out_cursor_ += sizeof(uint32_t) + header_stream.get_length() + body_stream.get_length();
 
     // update out_buf_size_
     out_buf_size_ = 0;
@@ -297,12 +302,16 @@ int InvertedListBuilder::dump_lexicon_entries(unordered_map<string, LexiconEntry
     BitStream header_s;
     BitStream body_s;
     cout << "start to dump lexicon" << endl;
-    if (p_lexicon_encoder_->encode(lexicons, header_s, body_s) != 0) {
-        return -1;
-    }
-    cout << "Finish encode lexicon" << endl;
-    cout << lexicon_file_ << endl;
-    if (p_lexicon_encoder_->dump(header_s, body_s, lexicon_file_) != 0) {
+//    if (p_lexicon_encoder_->encode(lexicons, header_s, body_s) != 0) {
+//        return -1;
+//    }
+//    cout << "Finish encode lexicon" << endl;
+//    cout << lexicon_file_ << endl;
+//    if (p_lexicon_encoder_->dump(header_s, body_s, lexicon_file_) != 0) {
+//        return -1;
+//    }
+    if (p_lexicon_encoder_->dump(lexicon_file_, lexicons) != 0) {
+        cerr << "Dump Lexicon failed" << endl;
         return -1;
     }
     cout << "Finish dump lexicon file" << endl;

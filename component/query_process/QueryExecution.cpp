@@ -48,11 +48,11 @@ QueryExecution::QueryExecution(string inverted_list_file,
 
     // load lexicon table
     LexiconEncoder encoder;
-    LexiconHeader header;
-    BitStream body;
-    encoder.load(lexicon_file, header, body);
-    encoder.decode(header, body, lexicons_);
-
+//    LexiconHeader header;
+//    BitStream body;
+//    encoder.load(lexicon_file, header, body);
+//    encoder.decode(header, body, lexicons_);
+    encoder.load(lexicon_file, lexicons_);
 }
 
 QueryExecution::~QueryExecution() {
@@ -68,6 +68,10 @@ int QueryExecution::openList(const string &term, InvertedList &lp) {
     LexiconEntry & entry = ptr->second;
     lp.entry_ = entry;
     lp.term = term;
+
+//    cout << lp.term << " " << lp.entry_.length_ << " "
+//        << ptr->second.chunk_offset_ << " " << ptr->second.block_cursor_ << " "
+//        << endl;
 
     lp.fd_inv_list_ = fopen(inverted_list_file_.c_str(), "r");
     assert (lp.fd_inv_list_ != nullptr);
@@ -149,12 +153,32 @@ int QueryExecution::nextGEQ(InvertedList &lp, uint32_t k, uint32_t & doc_id) {
 }
 
 int QueryExecution::getFreq(InvertedList &lp, uint32_t doc_id, uint64_t & freq) {
-    int pos = lower_bound(lp.chunk_cache_.doc_ids.begin(), lp.chunk_cache_.doc_ids.end(),
-                          doc_id) - lp.chunk_cache_.doc_ids.begin();
-    if (pos == (int)lp.chunk_cache_.doc_ids.size()) {
-        return -1;
+
+    if (!lp.chunk_cache_.doc_ids.empty()) {
+        size_t pos = lower_bound(lp.chunk_cache_.doc_ids.begin(), lp.chunk_cache_.doc_ids.end(),
+                              doc_id) - lp.chunk_cache_.doc_ids.begin();
+        if (pos < lp.chunk_cache_.doc_ids.size()) {
+            if (lp.chunk_cache_.doc_ids[pos] == doc_id) {
+                freq = lp.chunk_cache_.frequencies[pos];
+                return 0;
+            }
+            return -1;
+        }
     }
-    freq = lp.chunk_cache_.frequencies[pos];
+    // search on the last_doc_ids
+    int chunk_idx = lower_bound(lp.last_doc_ids.begin(), lp.last_doc_ids.end(), doc_id)
+                    - lp.last_doc_ids.begin();
+
+    if (chunk_idx == (int)lp.last_doc_ids.size()) {
+        // has no doc id
+        freq = -1.0;
+        return -1;
+    } else {
+        // load the chunk in the cache
+        loadChunk(lp, chunk_idx);
+        // recursive call
+        getFreq(lp,doc_id, freq);
+    }
     return 0;
 }
 
@@ -168,6 +192,9 @@ int QueryExecution::loadChunk(InvertedList & lp, int index) {
         cerr << "Invalid chunk index to load: " << index << endl;
         abort();
     }
+//    cout << "Start to load index: " << index << " for term: " << lp.term
+//        << ", offset: " << lp.chunk_byte_offsets[index] << ", byte size: " << lp.chunk_byte_lengths[index]
+//        << endl;
     // clean the cache
     clearListCache(lp);
     // load new chunk
@@ -189,7 +216,7 @@ int QueryExecution::loadBlockHeader(uint64_t block_offset) {
     BlockHeader header;
     fseek(fd_inv_list_, block_offset, SEEK_SET);
     // read from disk
-    uint32_t header_size;
+    uint32_t header_size = 0;
     fread(&header_size, sizeof(uint32_t), 1, fd_inv_list_);
 
     char * byte_buf = new char[header_size];
@@ -285,9 +312,11 @@ int QueryExecution::conjunctive_query(const string &query) {
     };
     priority_queue<QueryResult *, vector<QueryResult *>, decltype(cmp)> pq(cmp);
     const int top_limit = 12;
-    while (did < FLAGS_MAX_DOC_ID) {
-
+    while (did != FLAGS_MAX_DOC_ID) {
         nextGEQ(lps[0], did, did);
+        if (did == fLU::FLAGS_MAX_DOC_ID) {
+            break;
+        }
         uint32_t d = 0;
         for (int i = 1; i < num; ++i) {
             nextGEQ(lps[i], did, d);
@@ -453,9 +482,9 @@ void QueryExecution::print_result(const vector<QueryResult *> & results) {
                  << ", frequency: " << ptr->freqs[i] << endl;
         }
         // output snippet
-        Document doc;
-        MongoService::get_instance().selectDocument(ptr->doc_id, doc);
-        get_snippets(doc.content_, ptr->terms);
+//        Document doc;
+//        MongoService::get_instance().selectDocument(ptr->doc_id, doc);
+//        get_snippets(doc.content_, ptr->terms);
         cout << "-----------------------------------" << endl;
     }
 }

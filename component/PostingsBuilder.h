@@ -35,6 +35,7 @@ namespace engine::builder {
             uint32_t last_chunk_length; // for the list across blocks
             std::vector<uint32_t> chunk_offsets;  // in bytes
             std::vector<uint32_t> last_doc_ids; // last doc id in each chunk
+            BlockHeader (): header_size(0), block_size(0), chunk_count(0) { }
         };
 
         struct Block {

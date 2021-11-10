@@ -25,6 +25,7 @@ namespace engine::builder {
     public:
         HTMLParser();
         int parse(std::istream & is, ParserResult & result, uint32_t doc_id);
+        bool utf8(const std::string & src, size_t start_pos);
     private:
         std::unordered_set<char> delimiters;
     };
