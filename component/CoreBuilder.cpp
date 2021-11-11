@@ -110,8 +110,8 @@ void CoreBuilder::run(const std::string & filename,
     cout << "Create intermediate postings elapse: " << posting_elapse << " sec"
         << endl;
 
-    // dump doc table
-    //doc_table_builder.dump(doc_table_file, doc_table);
+//     dump doc table
+//    doc_table_builder.dump(doc_table_file, doc_table);
 
     // dump doc table to database
     if (!doc_table.empty()) {

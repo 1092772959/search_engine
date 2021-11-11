@@ -44,7 +44,7 @@ file(GLOB HEADERS)
 add_library(inverted_index ${SOURCES} component/mongo_client/MongoService.cpp component/mongo_client/MongoService.h)
 target_link_libraries(inverted_index gflags::gflags ${LIBMONGOCXX_LIBRARIES} ${LIBBSONCXX_LIBRARIES})
 
-add_executable(index_builder main.cpp)
+add_executable(index_builder index_builder.cpp)
 target_link_libraries(index_builder inverted_index)
 
 add_executable(query_process

@@ -12,6 +12,7 @@
 
 DECLARE_int64(chunk_length);
 DECLARE_uint32(MAX_DOC_ID);
+DECLARE_uint32(list_caching_size);
 
 using namespace engine::process;
 using namespace engine::builder;
@@ -48,10 +49,6 @@ QueryExecution::QueryExecution(string inverted_list_file,
 
     // load lexicon table
     LexiconEncoder encoder;
-//    LexiconHeader header;
-//    BitStream body;
-//    encoder.load(lexicon_file, header, body);
-//    encoder.decode(header, body, lexicons_);
     encoder.load(lexicon_file, lexicons_);
 }
 
@@ -63,15 +60,11 @@ int QueryExecution::openList(const string &term, InvertedList &lp) {
     auto ptr = lexicons_.find(term);
     if (ptr == lexicons_.end()) {
         cout << "Contains no term: " << term << endl;
-        return -1;
+        return -2;
     }
     LexiconEntry & entry = ptr->second;
     lp.entry_ = entry;
     lp.term = term;
-
-//    cout << lp.term << " " << lp.entry_.length_ << " "
-//        << ptr->second.chunk_offset_ << " " << ptr->second.block_cursor_ << " "
-//        << endl;
 
     lp.fd_inv_list_ = fopen(inverted_list_file_.c_str(), "r");
     assert (lp.fd_inv_list_ != nullptr);
@@ -129,7 +122,8 @@ int QueryExecution::openList(const string &term, InvertedList &lp) {
 int QueryExecution::nextGEQ(InvertedList &lp, uint32_t k, uint32_t & doc_id) {
     // binary search in the cache
     if (!lp.chunk_cache_.doc_ids.empty()) {
-        auto it = lower_bound(lp.chunk_cache_.doc_ids.begin(), lp.chunk_cache_.doc_ids.end(),
+        auto it = lower_bound(lp.chunk_cache_.doc_ids.begin(),
+                              lp.chunk_cache_.doc_ids.end(),
                     k);
         if (it != lp.chunk_cache_.doc_ids.end()) {
             doc_id = *it;
@@ -239,9 +233,10 @@ int QueryExecution::loadBlockHeader(uint64_t block_offset) {
 
 int QueryExecution::loadAll(const string &term,
                             InvertedList & lp) {
-    if (openList(term, lp) != 0) {
+    int ret = 0;
+    if (ret = openList(term, lp); ret != 0) {
         cerr << "Open list error for term: " << term << endl;
-        return -1;
+        return ret;
     }
 
     uint32_t i = 0;
@@ -264,16 +259,18 @@ int QueryExecution::loadAll(const string &term,
 }
 
 int QueryExecution::closeList(InvertedList &lp) {
+    clearListCache(lp);
     fclose(lp.fd_inv_list_);
     return 0;
 }
 
 void QueryExecution::word_segmentation(const string &query, vector<string> & terms) {
     string term;
+    unordered_set<string> S;
     for (const char & c : query) {
         if (delimiters_.find(c) != delimiters_.end()) {
             if (!term.empty()) {
-                terms.push_back(term);
+                S.insert(term);
                 term.clear();
             }
         } else {
@@ -281,11 +278,12 @@ void QueryExecution::word_segmentation(const string &query, vector<string> & ter
         }
     }
     if (!term.empty()) {
-        terms.push_back(term);
+        S.insert(term);
     }
+    terms.insert(terms.end(), S.begin(), S.end());
 }
 
-int QueryExecution::conjunctive_query(const string &query) {
+int QueryExecution::conjunctive_query(const string &query, bool snippet) {
     vector<string> terms;
     auto begin_ts = steady_clock::now();
     // word seg
@@ -298,7 +296,9 @@ int QueryExecution::conjunctive_query(const string &query) {
     vector<InvertedList> lps;
     for (auto & term : terms) {
         InvertedList lp;
-        openList(term, lp);
+        if (openList(term, lp) != 0) {
+            continue;
+        }
         lps.emplace_back(move(lp));
     }
     uint32_t did = 0;
@@ -311,7 +311,7 @@ int QueryExecution::conjunctive_query(const string &query) {
         return lhs->score_sum > rhs->score_sum;
     };
     priority_queue<QueryResult *, vector<QueryResult *>, decltype(cmp)> pq(cmp);
-    const int top_limit = 12;
+    const int top_limit = 10;
     while (did != FLAGS_MAX_DOC_ID) {
         nextGEQ(lps[0], did, did);
         if (did == fLU::FLAGS_MAX_DOC_ID) {
@@ -365,19 +365,8 @@ int QueryExecution::conjunctive_query(const string &query) {
         results.push_back(pq.top());
         pq.pop();
     }
-//
-//    cout << "-----------------------------------" << endl;
-//    for (auto rit = results.rbegin(); rit != results.rend(); ++rit) {
-//
-//        auto ptr = *rit;
-//        cout << "Doc id: " << ptr->doc_id << ", score sum: " << ptr->score_sum << endl;
-//        for (int i = 0; i < (int)ptr->scores.size(); ++i){
-//            cout << ptr->terms[i] << " | score: " << ptr->scores[i]
-//                << ", frequency: " << ptr->freqs[i] << endl;
-//        }
-//        cout << "-----------------------------------" << endl;
-//    }
-    print_result(results);
+
+    print_result(results, lps, snippet);
 
     auto search_elapse = duration_cast<milliseconds>(steady_clock::now() - begin_ts).count();
     cout << "Search elapse: " << search_elapse << " ms" << endl;
@@ -388,7 +377,7 @@ int QueryExecution::conjunctive_query(const string &query) {
     return 0;
 }
 
-int QueryExecution::disjunctive_query(const string &query) {
+int QueryExecution::disjunctive_query(const string &query, bool snippet) {
     // word seg
     auto begin_ts = steady_clock::now();
 
@@ -396,10 +385,15 @@ int QueryExecution::disjunctive_query(const string &query) {
     word_segmentation(query, terms);
 
     // term-at-a-time
+
+    // doc_id : result
     unordered_map<uint32_t, QueryResult> union_table;
+    vector<InvertedList> lps;
     for (auto & term : terms) {
         InvertedList lp;
-        loadAll(term, lp);
+        if (loadAll(term, lp) != 0) {
+            continue;
+        }
         for (size_t i = 0; i < lp.chunk_cache_.doc_ids.size(); ++i) {
             const uint32_t did = lp.chunk_cache_.doc_ids[i];
             const uint64_t freq = lp.chunk_cache_.frequencies[i];
@@ -410,19 +404,22 @@ int QueryExecution::disjunctive_query(const string &query) {
                 result.doc_id = did;
                 result.freqs = {freq};
                 result.terms = {term};
+                result.scores = {score};
                 union_table[did] = result;
             } else {
                 ptr->second.score_sum += score;
                 ptr->second.freqs.push_back(freq);
                 ptr->second.terms.push_back(term);
+                ptr->second.scores.push_back(score);
             }
         }
         // close
         closeList(lp);
+        lps.push_back(lp);
     }
 
     // chose top k
-    const int top_limit = 20;
+    const int top_limit = 10;
     auto cmp = [](const QueryResult* lhs, const QueryResult *rhs) {
         return lhs->score_sum > rhs->score_sum;
     };
@@ -443,17 +440,7 @@ int QueryExecution::disjunctive_query(const string &query) {
         pq.pop();
     }
 
-    cout << "-----------------------------------" << endl;
-    for (auto rit = results.rbegin(); rit != results.rend(); ++rit) {
-
-        auto ptr = *rit;
-        cout << "Doc id: " << ptr->doc_id << ", score sum: " << ptr->score_sum << endl;
-        for (int i = 0; i < (int)ptr->scores.size(); ++i) {
-            cout << ptr->terms[i] << " | score: " << ptr->scores[i]
-                 << ", frequency: " << ptr->freqs[i] << endl;
-        }
-        cout << "-----------------------------------" << endl;
-    }
+    print_result(results, lps, snippet);
 
     auto search_elapse = duration_cast<milliseconds>(steady_clock::now() - begin_ts).count();
     cout << "Search elapse: " << search_elapse << " ms" << endl;
@@ -472,20 +459,44 @@ float QueryExecution::compute_score(const std::string & term,
     return score;
 }
 
-void QueryExecution::print_result(const vector<QueryResult *> & results) {
-    cout << "-----------------------------------" << endl;
+void QueryExecution::print_result(const vector<QueryResult *> & results,
+                                  vector<InvertedList> & lps,
+                                  bool snippet) {
+    cout << "Term info: " << endl;
+    for (auto & lp : lps) {
+        cout << "Term: " << lp.term << ", inverted list length: " << lp.entry_.length_
+             << endl;
+    }
+
+    cout << "Documents: " << endl;
+    unordered_map<uint32_t, Document> doc_dict;
     for (auto rit = results.rbegin(); rit != results.rend(); ++rit) {
         auto ptr = *rit;
-        cout << "Doc id: " << ptr->doc_id << ", score sum: " << ptr->score_sum << endl;
+
+        //output snippet
+        Document doc;
+        MongoService::get_instance().selectDocument(ptr->doc_id, doc);
+        doc_dict[ptr->doc_id] = doc;
+        cout << "Doc id: " << ptr->doc_id << ", score sum: " << ptr->score_sum
+             << ", doc length: " << doc.doc_size_
+             << endl;
+    }
+    cout << "##########################################################" << endl;
+    for (auto rit = results.rbegin(); rit != results.rend(); ++rit) {
+        auto ptr = *rit;
+
+        cout << "-----------------------------------" << "Doc ID: " << ptr->doc_id
+            << "-----------------------------------" << endl;
+
         for (int i = 0; i < (int)ptr->scores.size(); ++i){
             cout << ptr->terms[i] << " | score: " << ptr->scores[i]
                  << ", frequency: " << ptr->freqs[i] << endl;
         }
-        // output snippet
-//        Document doc;
-//        MongoService::get_instance().selectDocument(ptr->doc_id, doc);
-//        get_snippets(doc.content_, ptr->terms);
-        cout << "-----------------------------------" << endl;
+        if (snippet) {
+            Document & doc = doc_dict[ptr->doc_id];
+            get_snippets(doc.content_, ptr->terms);
+        }
+        cout << "-----------------------------------" << endl << endl;
     }
 }
 

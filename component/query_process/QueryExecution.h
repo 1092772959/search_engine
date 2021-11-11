@@ -34,18 +34,18 @@ namespace engine::process {
         }
     };
 
-
     class QueryExecution {
     public:
         QueryExecution(std::string inverted_list_file,
                        std::string lexicon_file,
                        std::string doc_table_file);
-        int conjunctive_query(const std::string & query);
-        int disjunctive_query(const std::string & query);
+        int conjunctive_query(const std::string & query, bool snippet);
+        int disjunctive_query(const std::string & query, bool snippet);
 
         ~QueryExecution();
     private:
-        void word_segmentation(const std::string & query, std::vector<std::string> & terms);
+        void word_segmentation(const std::string & query,
+                               std::vector<std::string> & terms);
         int openList(const std::string & term, InvertedList & lp);
         void clearListCache(InvertedList & lp);
         int closeList(InvertedList & lp);
@@ -58,8 +58,10 @@ namespace engine::process {
         int loadAll(const std::string & term, InvertedList & lp);
         int loadBlockHeader(uint64_t header_offset);
         float compute_score(const std::string & term, uint32_t doc_id, uint64_t freq);
-        void print_result(const std::vector<QueryResult *> & results);
-        void get_snippets(const std::string & doc_content, const std::vector<std::string> & terms);
+        void print_result(const std::vector<QueryResult *> & results,
+                          std::vector<InvertedList> & lps,  bool snippet);
+        void get_snippets(const std::string & doc_content,
+                          const std::vector<std::string> & terms);
     private:
         FILE * fd_inv_list_;
         const std::string inverted_list_file_;
@@ -70,7 +72,6 @@ namespace engine::process {
         std::unordered_set<char> delimiters_;
         float average_doc_length_;
     };
-
 }
 
 #endif //INDEX_BUILDER_QUERYEXECUTION_H

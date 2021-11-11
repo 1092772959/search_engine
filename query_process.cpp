@@ -13,16 +13,17 @@ using namespace engine::process;
 using namespace std::chrono;
 
 DEFINE_string(inverted_list_file, "./data/output/msmarco-docs.trec_inverted_list",
-              "inverted list");
+              "the path of the inverted list");
 DEFINE_string(lexicon_file, "./data/output/msmarco-docs.trec_lexicon_table",
-              "lexicon file");
+              "the path of the lexicon file");
 DEFINE_string(doc_table_file, "./data/output/msmarco-docs.trec_doc_table",
-              "doc table file");
+              "the path of the doc table file");
 DEFINE_int64(chunk_length, 128,
              "Max length for a chunk, which is the minimum unit to compress");
 DEFINE_uint32(MAX_DOC_ID, UINT32_MAX, "To denote an unreachable doc id");
 DEFINE_string(mongo_db, "test", "name of the database");
 DEFINE_string(mongo_collection, "msmarco", "name of the collection");
+DEFINE_uint32(list_caching_size, 1024, "The caching limit for each list");
 
 int main(int argc, char * argv[]) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -34,12 +35,23 @@ int main(int argc, char * argv[]) {
     cout << "Init elapse: " << init_elapse << " s" << endl;
     while (true) {
         string query;
-        cout << "Enter query(Ctrl+C to exit)>";
+        string mode;
+        cout << "Enter query(Enter to exit)>";
         getline(cin, query);
-        if (query == "exit") {
+        if (query.empty()) {
             break;
         }
-        qp.conjunctive_query(query);
+        cout << "Conjunctive/Disconjunctive(0/others)>";
+        getline(cin, mode);
+        cout << "With snippet?(0 to drop)";
+        string snippet;
+        getline(cin, snippet);
+        bool has_snippet = !(snippet == "0");
+        if (mode == "0") {
+            qp.conjunctive_query(query, has_snippet);
+        } else {
+            qp.disjunctive_query(query, has_snippet);
+        }
     }
     return 0;
 }

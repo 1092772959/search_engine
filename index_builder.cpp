@@ -35,14 +35,14 @@ int main(int argc, char * argv[]) {
 
     CoreBuilder core_builder;
 
-//    int intermediate_block_count;
-//    core_builder.run(FLAGS_input_file,
-//                     FLAGS_inter_dir,
-//                     FLAGS_output_dir,
-//                     FLAGS_encode_mode,
-//                     intermediate_block_count);
-//
-//    cout << "Intermediate block counter: " << intermediate_block_count << endl;
+    int intermediate_block_count;
+    core_builder.run(FLAGS_input_file,
+                     FLAGS_inter_dir,
+                     FLAGS_output_dir,
+                     FLAGS_encode_mode,
+                     intermediate_block_count);
+
+    cout << "Intermediate block counter: " << intermediate_block_count << endl;
 
     vector<string> block_names;
     string file_base = std::filesystem::path(FLAGS_input_file).filename();
