@@ -186,9 +186,6 @@ int QueryExecution::loadChunk(InvertedList & lp, int index) {
         cerr << "Invalid chunk index to load: " << index << endl;
         abort();
     }
-//    cout << "Start to load index: " << index << " for term: " << lp.term
-//        << ", offset: " << lp.chunk_byte_offsets[index] << ", byte size: " << lp.chunk_byte_lengths[index]
-//        << endl;
     // clean the cache
     clearListCache(lp);
     // load new chunk
@@ -494,17 +491,22 @@ void QueryExecution::print_result(const vector<QueryResult *> & results,
         }
         if (snippet) {
             Document & doc = doc_dict[ptr->doc_id];
-            get_snippets(doc.content_, ptr->terms);
+            get_snippets(doc.content_, ptr->terms, ptr->scores);
         }
         cout << "-----------------------------------" << endl << endl;
     }
 }
 
-void QueryExecution::get_snippets(const string & doc_content, const vector<string> & terms) {
-    vector<pair<size_t, size_t >> segments;
+void QueryExecution::get_snippets(const string & doc_content,
+                                  const vector<string> & terms,
+                                  const vector<float> & scores) {
+    vector<SnippetSegment> segments;
     string word;
     size_t start = 0;
-    unordered_set<string> targets(terms.begin(), terms.end());
+    unordered_map<string, float> targets;
+    for (size_t i = 0; i < terms.size(); ++i) {
+        targets[terms[i]] = scores[i];
+    }
     size_t range = 100;
     for (size_t i = 0; i < doc_content.size(); ++i) {
         const char & c = doc_content[i];
@@ -513,8 +515,11 @@ void QueryExecution::get_snippets(const string & doc_content, const vector<strin
                 size_t prev_pos = start <= range ? 0 : start - range;
                 size_t post_pos = i + range < doc_content.size() ? i + range
                         : doc_content.size() - 1;
-                if (segments.empty() || segments.back().second < prev_pos) {
-                    segments.push_back({prev_pos, post_pos});
+                if (segments.empty() || segments.back().end_pos < prev_pos) {
+                    segments.emplace_back((SnippetSegment){prev_pos, post_pos, targets[word]});
+                } else {
+                    segments.back().end_pos = post_pos;
+                    segments.back().score += targets[word];
                 }
                 start = post_pos + 1;
             } else {
@@ -525,9 +530,20 @@ void QueryExecution::get_snippets(const string & doc_content, const vector<strin
             word.push_back(c);
         }
     }
+    // get top k for snippets
+    priority_queue<SnippetSegment> pq;
+    const int k = 5;
+    for (auto & seg : segments) {
+        if (pq.size() < k) {
+            pq.push(seg);
+        } else if (pq.top().score < seg.score){
+            pq.pop();
+            pq.push(seg);
+        }
+    }
     cout << "*****************************" << endl;
     for (auto & seg : segments) {
-        cout << doc_content.substr(seg.first, seg.second - seg.first + 1) << endl;
+        cout << doc_content.substr(seg.start_pos, seg.end_pos - seg.start_pos + 1) << endl;
         cout << "*****************************" << endl;
     }
 }

@@ -48,7 +48,7 @@ int BlockBinaryEncoder::encode_block_header(BlockHeader &header, BitStream &outp
     var_byte_encode(header.block_size, output);
     var_byte_encode(header.chunk_count, output);
     var_byte_encode(header.last_chunk_length, output);
-    delta_encode(header.chunk_offsets, output);
+    delta_encode_v2(header.chunk_offsets, output);
     for (unsigned int last_doc_id : header.last_doc_ids) {
         var_byte_encode(last_doc_id, output);
     }
@@ -92,7 +92,8 @@ int BlockBinaryEncoder::decode_block_header(BitStream &src, BlockHeader &header)
     var_byte_decode(src, header.block_size);
     var_byte_decode(src, header.chunk_count);
     var_byte_decode(src, header.last_chunk_length);
-    delta_decode(src, header.chunk_offsets);
+    //delta_decode(src, header.chunk_offsets);
+    delta_decode_v2(src, header.chunk_offsets);
     for (size_t i = 0; i < header.chunk_count; ++i) {
         uint32_t last_doc_id;
         var_byte_decode(src, last_doc_id);
@@ -109,13 +110,13 @@ int BlockBinaryEncoder::decode_inter_posting(BitStream &src, Posting &posting) {
 }
 
 int BlockBinaryEncoder::encode_chunk(const Posting & posting, BitStream & out) {
-    delta_encode(posting.doc_ids, out);
+    delta_encode_v2(posting.doc_ids, out);
     bit_packing(posting.frequencies, out);
     return 0;
 }
 
 int BlockBinaryEncoder::decode_chunk(BitStream &src, Posting &posting) {
-    delta_decode(src, posting.doc_ids);
+    delta_decode_v2(src, posting.doc_ids);
     bit_packing_decode(src, posting.frequencies);
     return 0;
 }

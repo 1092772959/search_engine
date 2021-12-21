@@ -18,6 +18,8 @@ include_directories(component)
 include_directories(component/utils)
 include_directories(component/query_process)
 include_directories(component/mongo_client)
+include_directories(component/doc_reordering)
+include_directories(component/constant)
 find_package(libmongocxx REQUIRED)
 find_package(libbsoncxx REQUIRED)
 include_directories(${LIBMONGOCXX_INCLUDE_DIR})
@@ -39,9 +41,14 @@ file(GLOB SOURCES
         component/BlockEncoder.cpp
         component/LexiconBuilder.cpp
         component/query_process/QueryExecution.cpp
-)
+        component/mongo_client/MongoService.cpp
+        component/doc_reordering/BlandfordBlelloch.cpp
+        component/doc_reordering/BaseReordering.cpp
+        component/utils/DocumentParser.cpp
+        component/constant/status_code.cpp
+        )
 file(GLOB HEADERS)
-add_library(inverted_index ${SOURCES} component/mongo_client/MongoService.cpp component/mongo_client/MongoService.h)
+add_library(inverted_index ${SOURCES})
 target_link_libraries(inverted_index gflags::gflags ${LIBMONGOCXX_LIBRARIES} ${LIBBSONCXX_LIBRARIES})
 
 add_executable(index_builder index_builder.cpp)
@@ -51,3 +58,8 @@ add_executable(query_process
         query_process.cpp
         )
 target_link_libraries(query_process inverted_index )
+
+add_executable(index_builder_reordering
+        index_builder_reordering.cpp
+        )
+target_link_libraries(index_builder_reordering inverted_index)

@@ -34,6 +34,18 @@ namespace engine::process {
         }
     };
 
+    struct SnippetSegment {
+        size_t start_pos;
+        size_t end_pos;
+        float score;
+        bool operator < (const SnippetSegment & rhs) const {
+            if (score == rhs.score) {
+                return start_pos > rhs.start_pos;
+            }
+            return score > rhs.score;
+        }
+    };
+
     class QueryExecution {
     public:
         QueryExecution(std::string inverted_list_file,
@@ -61,7 +73,8 @@ namespace engine::process {
         void print_result(const std::vector<QueryResult *> & results,
                           std::vector<InvertedList> & lps,  bool snippet);
         void get_snippets(const std::string & doc_content,
-                          const std::vector<std::string> & terms);
+                          const std::vector<std::string> & terms,
+                          const std::vector<float> & scores);
     private:
         FILE * fd_inv_list_;
         const std::string inverted_list_file_;

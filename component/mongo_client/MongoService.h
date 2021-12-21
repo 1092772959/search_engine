@@ -47,9 +47,11 @@ namespace engine::database {
         int addDocument(const builder::Document & doc);
         int addDocuments(const std::vector<builder::Document> &);
         int selectDocument(const uint32_t & doc_id, builder::Document & output);
+        int selectDocumentRange(uint32_t L, uint32_t R, std::vector<builder::Document> & output);
+        int64_t countDocuments();
     private:
         MongoService() {
-            std::cout << "Init mongodb service" << std::endl;
+            std::cout << "Init mongodb service for collection: " << FLAGS_mongo_collection << std::endl;
             db_ = client[FLAGS_mongo_db];
             coll_ = db_[FLAGS_mongo_collection];
         }

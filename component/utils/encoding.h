@@ -95,9 +95,6 @@ namespace engine {
 
         template<class T>
         void delta_encode(const std::vector<T>& nums, BitStream & bit_stream) {
-//            if (nums.size() == 0) {
-//                return;
-//            }
             uint64_t base = nums[0];
             var_byte_encode(base, bit_stream);
             std::vector<uint64_t> deltas;
@@ -158,11 +155,16 @@ namespace engine {
             nums.push_back(base);
             T pre = base;
             bit_packing_decode(bit_stream, nums);
-            for (int i = 1; i < nums.size(); ++i) {
+            for (size_t i = 1; i < nums.size(); ++i) {
                 nums[i] = nums[i] + pre;
                 pre = nums[i];
             }
         }
+
+        void delta_encode_v2(const std::vector<uint32_t> &nums, BitStream & bit_stream);
+        void delta_decode_v2(BitStream & bit_stream,  std::vector<uint32_t> &nums);
+        void simple9_encode(const std::vector<uint32_t> & nums, BitStream & bit_stream);
+        void simple9_decode(BitStream & bit_stream, std::vector<uint32_t> & nums);
     }
 }
 

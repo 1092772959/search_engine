@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <chrono>
 #include "MongoService.h"
+#include "utils/DocumentParser.h"
 
 using namespace engine::builder;
 using namespace std;
@@ -27,7 +28,6 @@ void CoreBuilder::run(const std::string & filename,
 
     shared_ptr<BlockEncoder> p_encoder;
     vector<Document> doc_table;
-    DocTableBuilder doc_table_builder;
 
     fs::path doc_table_file = output_dir / fs::path(file_base + "_doc_table");
     fs::path lexicon_inter_file = output_dir / fs::path(file_base + "_inter_lexicon_table");
@@ -64,9 +64,6 @@ void CoreBuilder::run(const std::string & filename,
         // update doc table
         doc_table.emplace_back(doc_id_cur, result.url_, result.doc_length_, result.content);
 
-        auto parser_elapse = duration_cast<microseconds>(
-                steady_clock::now() - pre_ts).count();
-
         pre_ts = steady_clock::now();
 
         // update posting buffer
@@ -87,9 +84,8 @@ void CoreBuilder::run(const std::string & filename,
             auto load_db_elapse = duration_cast<milliseconds>(steady_clock::now() - begin_load_ts).count();
             cout << "Load to mongodb elapse: " << load_db_elapse << " ms" << endl;
 
-            auto cur_ts = steady_clock::now();
             cout << "Counter: " << doc_id_cur
-                 << " elapsed: " << duration_cast<seconds>(cur_ts - begin_ts).count() << " s"
+                 << " elapsed: " << duration_cast<seconds>(steady_clock::now() - begin_ts).count() << " s"
                  << endl;
         }
     }
@@ -117,6 +113,94 @@ void CoreBuilder::run(const std::string & filename,
     if (!doc_table.empty()) {
         MongoService::get_instance().addDocuments(doc_table);
     }
+}
+
+void CoreBuilder::run_doc_reordering(const std::string & filename,
+                        const std::string & inter_dir,
+                        const std::string & output_dir,
+                        int block_mode,
+                        int & intermediate_block_count,
+                        BaseReordering & reordering_model) {
+    int ret = 0;
+    fs::path fs_input_file(filename);
+    string file_base = fs_input_file.filename();
+
+    shared_ptr<BlockEncoder> p_encoder;
+    vector<Document> doc_table;
+
+    switch(block_mode) {
+        case 0:
+            p_encoder = make_shared<BlockBinaryEncoder>();
+            break;
+        default:
+            p_encoder = make_shared<BlockPlainEncoder>();
+            break;
+    }
+    PostingsBuilder posting_builder(inter_dir, filename, FLAGS_inter_buffer_size, p_encoder);
+
+    auto & mongo_client = MongoService::get_instance();
+    auto & doc_parser = DocumentParser::get_instance();
+    /**
+     * Set as a test data size
+     */
+    uint32_t document_count = mongo_client.countDocuments() / 100;
+    cout << "Total document number: " << document_count << endl;
+
+    // reordering
+    auto begin_ts = steady_clock::now();
+    vector<uint32_t> reordered_indexes;
+    reordered_indexes.resize(document_count);
+    for (uint32_t i = 0; i < document_count; ++i) {
+        reordered_indexes[i] = i;
+    }
+    cout << "Start reordering" << endl;
+    reordering_model.reorder_index(reordered_indexes);
+    cout << "Reordering documents elapsed: " << duration_cast<seconds>(steady_clock::now() - begin_ts).count() << " s"
+         << endl;
+
+    // reset timer
+    begin_ts = steady_clock::now();
+    // parsing terms
+    for (uint32_t doc_id = 0; doc_id < document_count; ++doc_id) {
+        Document doc;
+        if (mongo_client.selectDocument(doc_id, doc) != 0 ) {
+            cerr << "Get document " << doc_id << " from dynamodb error" << endl;
+            abort();
+        }
+
+        // parse terms
+        vector<string> terms;
+        doc_parser.parse(doc.content_, terms);
+
+        // set r_id to be the real id for inverted list
+        uint32_t r_id = reordered_indexes[doc_id];
+        posting_builder.add_postings(r_id, terms);
+
+        if (doc_id % 10000 == 0) {
+            auto begin_load_ts = steady_clock::now();
+//            auto load_db_elapse = duration_cast<milliseconds>(steady_clock::now() - begin_load_ts).count();
+//            cout << "Load to mongodb elapse: " << load_db_elapse << " ms" << endl;
+
+            auto cur_ts = steady_clock::now();
+            cout << "Counter: " << doc_id
+                 << " elapsed: " << duration_cast<seconds>(cur_ts - begin_ts).count() << " s"
+                 << endl;
+        }
+    }
+
+    ret = posting_builder.dump();
+    if (ret != 0) {
+        cerr << "Dump postings failed" << endl;
+        abort();
+    }
+
+    // set intermediate block counter
+    intermediate_block_count = posting_builder.get_block_counter();
+
+    auto posting_elapse = duration_cast<seconds>(steady_clock::now() - begin_ts).count();
+    cout << "Create intermediate postings elapse: " << posting_elapse << " sec"
+         << endl;
+
 }
 
 void CoreBuilder::merge_sort(const string & src_file,

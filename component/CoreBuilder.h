@@ -11,6 +11,7 @@
 #include "DocTableBuilder.h"
 #include "PostingsBuilder.h"
 #include "InvertedListBuilder.h"
+#include "doc_reordering/BaseReordering.h"
 
 DECLARE_int32(encode_mode);
 DECLARE_int64(inter_buffer_size);
@@ -27,6 +28,13 @@ namespace engine::builder {
                  const std::string & output_dir,
                  int block_mode,
                  int & intermediate_block_count);
+
+        void run_doc_reordering(const std::string & filename,
+                 const std::string & inter_dir,
+                 const std::string & output_dir,
+                 int block_mode,
+                 int & intermediate_block_count,
+                 BaseReordering & reordering_model);
 
         void merge_sort(const std::string & src_file,
                         const std::string & output_dir,
